@@ -18,9 +18,15 @@ Copyright (c) 2014 Rafael Marmelo
 import csv
 import os.path
 import telnetlib
-import tkinter as tk
-import tkinter.ttk as ttk
-import tkinter.messagebox
+try:    
+    import tkinter as tk
+    import tkinter.ttk as ttk
+    import tkinter.messagebox
+except:
+    import Tkinter as tk
+    import ttk
+    import tkMessageBox
+
 
 
 class RigCtl():
@@ -149,6 +155,9 @@ class GqrxRemote(ttk.Frame):
         self.btn_quit = ttk.Button(self.menu, text="Quit", command=self.master.destroy)
         self.btn_quit.grid(row=8, column=2, columnspan=2, sticky=tk.SE)
 
+        self.btn_scan = ttk.Button(self.menu, text="Quit", command=self.master.destroy)
+        self.btn_scan.grid(row=6, column=0, columnspan=2, command=self.scan)
+
         # set initial status
         self.txt_hostname.insert(0, "127.0.0.1")
         self.txt_port.insert(0, "7356")
@@ -190,7 +199,10 @@ class GqrxRemote(ttk.Frame):
             self.txt_frequency.insert(0, self._frequency_pp(frequency))
             self.cbb_mode.insert(0, mode)
         except Exception as err:
-            tkinter.messagebox.showerror("Error", "Could not connect to gqrx.\n%s" % err, parent=self)
+            try:
+                tkinter.messagebox.showerror("Error", "Could not connect to gqrx.\n%s" % err, parent=self)
+            except:
+                tkMessageBox.showerror("Error", "Could not connect to gqrx.\n%s" % err, parent=self)
 
     def cb_set_frequency(self, event):
         """Set the gqrx frequency and mode."""
@@ -200,7 +212,10 @@ class GqrxRemote(ttk.Frame):
             self._connect().set_frequency(values[0].replace(',', ''))
             self._connect().set_mode(values[1])
         except Exception as err:
-            tkinter.messagebox.showerror("Error", "Could not set frequency.\n%s" % err, parent=self)
+            try:
+                tkinter.messagebox.showerror("Error", "Could not set frequency.\n%s" % err, parent=self)
+            except: 
+                tkMessageBox.showerror("Error", "Could not set frequency.\n%s" % err, parent=self)
 
     def cb_autofill_form(self, event):
         """Auto-fill bookmark fields with details of currently selected Treeview entry."""
@@ -228,7 +243,10 @@ class GqrxRemote(ttk.Frame):
                 idx = self.tree.index(item)
                 break
             elif frequency == curr_freq and mode == curr_mode:
-                tkinter.messagebox.showerror("Error", "A bookmark with the same frequency and mode already exists.", parent=self)
+                try:
+                    tkinter.messagebox.showerror("Error", "A bookmark with the same frequency and mode already exists.", parent=self)
+                except:
+                    tkMessageBox.showerror("Error", "Could not set frequency.\n%s" % err, parent=self)
                 return
         # insert
         item = self.tree.insert('', idx, values=[self._frequency_pp(frequency), mode, description])
@@ -256,6 +274,24 @@ class GqrxRemote(ttk.Frame):
     def _frequency_pp_parse(self, frequency):
         """Remove thousands separator."""
         return int(str(frequency).replace(',', ''))
+ 
+    def scan(self):
+        """
+        loop over the frequencies in the list, 
+        and stop if the frequency is active (signal strength is high enough)
+        """
+        while(1):
+            for freq in self.freqs.keys():
+                self._set_freq(freq)
+                self._set_mode(self.freqs[freq]['mode'])
+                self._set_squelch(self.signalStrength)
+                time.sleep(1)
+                if float(self._get_level()) >= self.signalStrength:
+                    timenow = str(time.localtime().tm_hour) + ':' + str(time.localtime().tm_min)
+                    print timenow, freq, self.freqs[freq]['tag']
+                    while float(self._get_level()) >= self.signalStrength:
+                    time.sleep(self.waitTime)
+
 
 
 # entry point
