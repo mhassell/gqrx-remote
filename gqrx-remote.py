@@ -282,7 +282,7 @@ class GqrxRemote(ttk.Frame):
         """
         while(1):
             for freq in self.freqs.keys():
-                self._set_freq(freq)
+                self._set_frequency(freq)
                 self._set_mode(self.freqs[freq]['mode'])
                 self._set_squelch(self.signalStrength)
                 time.sleep(1)
